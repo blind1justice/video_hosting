@@ -1,10 +1,11 @@
 // pages/PublicProfile.js
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Container, Row, Col, Card, Spinner, Alert } from "react-bootstrap";
+import { Container, Row, Col, Card, Spinner, Alert, Button } from "react-bootstrap";
 import { observer } from "mobx-react-lite";
 import VideoList from "../components/VideoList";
 import { get_user } from "../http/userAPI";
+import { subscribe, unsubscribe } from "../http/subscriptionAPI";
 
 const PublicProfile = observer(() => {
     const { id } = useParams(); // ID пользователя из URL
@@ -12,6 +13,7 @@ const PublicProfile = observer(() => {
     const [error, setError] = useState(null);
     
     // Состояния для пользователя
+    const [userId, setUserId] = useState('');
     const [userEmail, setUserEmail] = useState('');
     const [userUsername, setUserUsername] = useState('');
     const [userAvatarUrl, setUserAvatarUrl] = useState('');
@@ -23,6 +25,9 @@ const PublicProfile = observer(() => {
     const [channelCountry, setChannelCountry] = useState('');
     const [channelLanguage, setChannelLanguage] = useState('');
     const [channelCreatedAt, setChannelCreatedAt] = useState('');
+    const [subscribed, setSubscribed] = useState(false);
+    const [subscriberCount, setSubscriberCount] = useState(0);
+    const [subscriptionLoading, setSubscriptionLoading] = useState(false);
     
     const hasChannel = !!channelId;
 
@@ -40,6 +45,7 @@ const PublicProfile = observer(() => {
             const data = await get_user(id);
             
             if (data) {
+                setUserId(data.id || '');
                 setUserEmail(data.email || '');
                 setUserUsername(data.username || '');
                 setUserAvatarUrl(data.avatar_url || '');
@@ -51,6 +57,8 @@ const PublicProfile = observer(() => {
                     setChannelCountry(data.channel.country || '');
                     setChannelLanguage(data.channel.language || '');
                     setChannelCreatedAt(data.channel.created_at || '');
+                    setSubscribed(data.channel.is_subscribed || false);
+                    setSubscriberCount(data.channel.subscriber_count || 0);
                 } else {
                     resetChannelData();
                 }
@@ -62,6 +70,29 @@ const PublicProfile = observer(() => {
             setLoading(false);
         }
     };
+
+    const handleSubscribe = async () => {
+        if (subscriptionLoading) return;
+
+        try {
+            setSubscriptionLoading(true);
+            if (subscribed) {
+                await unsubscribe(channelId);
+                setSubscribed(false);
+                setSubscriberCount(prev => Math.max(0, prev - 1));
+            }
+            else {
+                await subscribe(channelId);
+                setSubscribed(true);
+                setSubscriberCount(prev => prev + 1);
+            }
+        } catch (err) {
+            console.error("Ошибка при изменении подписки:", err);
+            alert(err.response?.data?.message || "Произошла ошибка при изменении подписки");
+        } finally {
+            setSubscriptionLoading(false);
+        }
+    }
     
     const resetChannelData = () => {
         setChannelId(null);
@@ -79,6 +110,16 @@ const PublicProfile = observer(() => {
             month: 'long',
             day: 'numeric'
         });
+    };
+
+    const formatNumber = (num) => {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        }
+        if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
     };
 
     if (loading) {
@@ -132,6 +173,13 @@ const PublicProfile = observer(() => {
                                     {userUsername || 'Не указано'}
                                 </div>
                             </div>
+
+                            <div className="mb-3">
+                                <div className="fw-bold mb-1">Почта пользователя:</div>
+                                <div className="text-muted">
+                                    {userEmail || 'Не указано'}
+                                </div>
+                            </div>
                             
                             <div className="mb-3">
                                 <div className="fw-bold mb-1">Дата регистрации:</div>
@@ -178,6 +226,32 @@ const PublicProfile = observer(() => {
                                         {formatDate(channelCreatedAt)}
                                     </div>
                                 </div>
+
+                                <div className="mb-3">
+                                    <div className="fw-bold mb-1">Количество подписчиков:</div>
+                                    <div className="text-muted">
+                                        {formatNumber(subscriberCount)}
+                                    </div>
+                                </div>
+
+                                <Button 
+                                    variant={subscribed ? "secondary" : "danger"} 
+                                    size="sm"
+                                    onClick={handleSubscribe}
+                                    disabled={subscriptionLoading}
+                                >
+                                    {subscriptionLoading ? (
+                                        <Spinner
+                                            as="span"
+                                            animation="border"
+                                            size="sm"
+                                            role="status"
+                                            aria-hidden="true"
+                                            className="me-1"
+                                        />
+                                    ) : null}
+                                    {subscribed ? 'Отписаться' : 'Подписаться'}
+                                </Button>
                             </Card.Body>
                         </Card>
                     </Col>

@@ -16,6 +16,8 @@ class User(Base):
     role: Mapped[Role] = mapped_column(Enum(Role), default=Role.USER)
 
     channel = relationship('Channel', uselist=False, back_populates='user')
+    subscriptions = relationship('Subscription', back_populates='subscriber')
+    reactions = relationship('Reaction', back_populates='user')
 
     def to_read_model(self):
         from schemas.user import UserSchemaWithouChannelRead

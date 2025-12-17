@@ -1,10 +1,13 @@
 from models.video import Video
 from models.channel import Channel
+from models.reaction import Reaction
+from models.enums import ReactionType
 from repositories.base import BaseRepository
-from sqlalchemy import select
+from sqlalchemy import select, and_, exists, func
 from sqlalchemy.orm import joinedload
 from schemas.video import VideoSchemaWithChannelRead, VideoSchemaWithChannelDetailRead
 from db.session import async_session
+from models.subscription import Subscription
 
 
 class VideoRepository(BaseRepository):
@@ -30,8 +33,29 @@ class VideoRepository(BaseRepository):
             return res
 
 
-    async def get_one_with_channel(self, video_id: int):
+    async def get_one_with_channel(self, video_id: int, user_id=None):
         async with async_session() as session:
+            sub_count = (
+                select(func.count(Subscription.id))
+                .where(Subscription.channel_id == Channel.id)
+                .scalar_subquery()
+                .label("subscriber_count")
+            )
+
+            like_count = (
+                select(func.count(Reaction.id))
+                .where((Reaction.video_id == Video.id) & (Reaction.type==ReactionType.LIKE))
+                .scalar_subquery()
+                .label("like_count")
+            )
+
+            dislike_count = (
+                select(func.count(Reaction.id))
+                .where((Reaction.video_id == Video.id) & (Reaction.type==ReactionType.DISLIKE))
+                .scalar_subquery()
+                .label("dislike_count")
+            )
+
             query = (
                 select(Video)
                 .join(Video.channel)
@@ -39,12 +63,49 @@ class VideoRepository(BaseRepository):
                 .options(
                     joinedload(Video.channel).joinedload(Channel.user)
                 )
+                .add_columns(sub_count, like_count, dislike_count)
                 .where(Video.id == video_id)
             )
+            
+            if user_id is not None:
+                sub_exists = (
+                    exists()
+                    .where(Subscription.channel_id == Channel.id)
+                    .where(Subscription.subscriber_id == user_id)
+                    .correlate(Channel)
+                )
+
+                like_exists = (
+                    exists()
+                    .where((Reaction.video_id == Video.id) & (Reaction.type==ReactionType.LIKE))
+                    .where(Reaction.user_id == user_id)
+                    .correlate(Video)
+                )
+
+                dislike_exists = (
+                    exists()
+                    .where((Reaction.video_id == Video.id) & (Reaction.type==ReactionType.DISLIKE))
+                    .where(Reaction.user_id == user_id)
+                    .correlate(Video)
+                )
+            
+                query = query.add_columns(
+                    sub_exists.label("is_subscribed"), 
+                    like_exists.label("is_liked"),
+                    dislike_exists.label("is_disliked")
+                )
 
             res = await session.execute(query)
             row = res.one_or_none()
+
             if row:
-                return VideoSchemaWithChannelDetailRead.model_validate(row[0])
+                videoschema = VideoSchemaWithChannelDetailRead.model_validate(row[0])
+                videoschema.subscriber_count = row[1]
+                videoschema.like_count = row[2]
+                videoschema.dislike_count = row[3]
+                videoschema.is_subscribed = row[4] if user_id else False
+                videoschema.is_liked = row[5] if user_id else False
+                videoschema.is_disliked = row[6] if user_id else False
+                return videoschema
             else:
                 return None

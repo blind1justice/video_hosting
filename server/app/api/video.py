@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
-from api.dependecies import video_service, get_current_user_with_channel, get_current_user
+from api.dependecies import video_service, get_current_user_with_channel, get_optional_user
 from services.video_service import VideoService
 from schemas.user import UserSchemaRead
 
@@ -16,12 +16,12 @@ async def upload_video(
     description: str = Form(None),
     video_file: UploadFile = File(...),
 ):
-    allowed_video_types = ['video/mp4', 'video/mov', 'video/avi', 'video/x-matroska']
+    allowed_video_types = ['video/mp4', 'video/quicktime', 'video/avi', 'video/x-matroska']
 
     if video_file.content_type not in allowed_video_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f'Unsupported video format. Allowed: {", ".join(allowed_video_types)}'
+            detail=f'Unsupported video format. Get {video_file.content_type}. Allowed: {", ".join(allowed_video_types)}'
         )
 
     return await video_service.upload_one(current_user.channel.id, title, video_file.file, video_file.content_type, description)
@@ -39,5 +39,7 @@ async def get_videos(
 async def get_video_detail(
     video_id: int,
     video_service: Annotated[VideoService, Depends(video_service)],
+    current_user: UserSchemaRead = Depends(get_optional_user),
 ):
-    return await video_service.get_one_with_channel(video_id)
+    user_id = current_user.id if current_user else None
+    return await video_service.get_one_with_channel(video_id, user_id)

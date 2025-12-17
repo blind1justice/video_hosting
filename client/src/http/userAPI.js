@@ -6,6 +6,6 @@ export const get_me = async () => {
 }
 
 export const get_user = async (id) => {
-    const {data} = await $host.get(`api/users/${id}/`);
+    const {data} = await $authHost.get(`api/users/${id}/`);
     return data;
 }

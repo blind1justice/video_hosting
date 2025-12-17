@@ -21,6 +21,7 @@ const Profile = observer(() => {
     const [channelCountry, setChannelCountry] = useState('');
     const [channelLanguage, setChannelLanguage] = useState('');
     const [channelCreatedAt, setChannelCreatedAt] = useState('');
+    const [subscriberCount, setSubscriberCount] = useState(0);
     
     // Формы для редактирования/создания
     const [formDescription, setFormDescription] = useState('');
@@ -56,6 +57,7 @@ const Profile = observer(() => {
                     setFormDescription(data.channel.description || '');
                     setFormCountry(data.channel.country || '');
                     setFormLanguage(data.channel.language || '');
+                    setSubscriberCount(data.channel.subscriber_count || 0);
                 } else {
                     resetChannelData();
                 }
@@ -76,6 +78,16 @@ const Profile = observer(() => {
         setFormDescription('');
         setFormCountry('');
         setFormLanguage('');
+    };
+
+    const formatNumber = (num) => {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        }
+        if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
     };
     
     const resetForm = () => {
@@ -329,6 +341,14 @@ const Profile = observer(() => {
                                                         {formatDate(channelCreatedAt)}
                                                     </p>
                                                 </Form.Group>
+
+                                                <Form.Group className="mb-3">
+                                                    <Form.Label className="fw-bold">Количество подписчиков:</Form.Label>
+                                                    <p className="text-muted">
+                                                        {formatNumber(subscriberCount)}
+                                                    </p>
+                                                </Form.Group>
+
                                             </Form>
                                             
                                             <div className="d-flex gap-2">

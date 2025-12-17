@@ -54,8 +54,8 @@ class VideoService(BaseService):
         return videos
 
 
-    async def get_one_with_channel(self, video_id):
-        video = await self.repo.get_one_with_channel(video_id)
+    async def get_one_with_channel(self, video_id, user_id):
+        video = await self.repo.get_one_with_channel(video_id, user_id)
         video_file = await self.s3_service.get_file_url(video.storage_key)
         video.video_file = video_file
         return video

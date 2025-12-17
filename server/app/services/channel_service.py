@@ -16,5 +16,5 @@ class ChannelService(BaseService):
         res = await self.repo.add_one(item_dict)
         return res
     
-    async def get_one_with_vides(self, channel_id):
+    async def get_one_with_videos(self, channel_id):
         return await self.repo.get_one_with_all_videos(channel_id)

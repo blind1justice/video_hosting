@@ -1,8 +1,9 @@
 from db.session import async_session
-from models import User
+from models import User, Subscription, Channel
 from repositories.base import BaseRepository
+from schemas.user import UserSchemaRead
 
-from sqlalchemy import select
+from sqlalchemy import select, func, exists
 from sqlalchemy.orm import selectinload, joinedload
 
 
@@ -29,12 +30,38 @@ class UserRepository(BaseRepository):
             else:
                 return None
             
-    async def get_user_with_channel(self, user_id: int):
-        query = select(self.model).where(self.model.id == user_id).options(joinedload(self.model.channel))
+    async def get_user_with_channel(self, user_id: int, warden_id=None):
         async with async_session() as session:
+            sub_count = (
+                select(func.count(Subscription.id))
+                .where(Subscription.channel_id == Channel.id)
+                .scalar_subquery()
+                .label("subscriber_count")
+            )
+
+            query = (
+                select(self.model)
+                .options(joinedload(self.model.channel))
+                .add_columns(sub_count)
+                .where(self.model.id == user_id)
+            )
+
+            if warden_id is not None:
+                sub_exists = (
+                    exists()
+                    .where(Subscription.channel_id == Channel.id)
+                    .where(Subscription.subscriber_id == warden_id)
+                    .correlate(Channel)
+                )
+
+                query = query.add_columns(sub_exists.label("is_subscribed"))
+
             res = await session.execute(query)
             row = res.one_or_none()
             if row:
-                return row[0].to_read_model_with_channel()
+                userschema = UserSchemaRead.model_validate(row[0])
+                userschema.channel.subscriber_count = row[1] if userschema.channel else 0
+                userschema.channel.is_subscribed = row[2] if warden_id else False
+                return userschema
             else:
                 return None

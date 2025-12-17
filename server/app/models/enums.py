@@ -11,3 +11,8 @@ class VideoStatus(enum.Enum):
     PROCESSING = 'processing'
     PROCESSED = 'processed'
     FAILED = 'failed'
+
+
+class ReactionType(enum.Enum):
+    LIKE = 'like'
+    DISLIKE = 'dislike'

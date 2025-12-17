@@ -32,6 +32,6 @@ export const get_channel_videos = async (channel_id) => {
 
 
 export const get_video_detail = async (id) => {
-  const { data } = await $host.get(`api/videos/${id}/`);
+  const { data } = await $authHost.get(`api/videos/${id}`);
   return data;
 }

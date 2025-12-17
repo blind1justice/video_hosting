@@ -65,6 +65,12 @@ class VideoSchemaWithChannelRead(BaseModel):
 
 class VideoSchemaWithChannelDetailRead(VideoSchemaWithChannelRead):
     video_file: Optional[str] = None
+    is_subscribed: Optional[bool] = False
+    is_liked: Optional[bool] = False
+    is_disliked: Optional[bool] = False
+    subscriber_count: Optional[int] = 0
+    like_count: Optional[int] = 0
+    dislike_count: Optional[int] = 0
 
     class Config:
         from_attributes = True

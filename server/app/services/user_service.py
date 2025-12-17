@@ -12,6 +12,6 @@ class UserService(BaseService):
         res = await self.repo.get_user_by_username(username)
         return res
     
-    async def get_user_with_channel(self, id: int):
-        res = await self.repo.get_user_with_channel(id)
+    async def get_user_with_channel(self, id: int, warden_id=None):
+        res = await self.repo.get_user_with_channel(id, warden_id)
         return res

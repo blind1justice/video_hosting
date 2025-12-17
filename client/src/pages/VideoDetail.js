@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useParams, NavLink } from "react-router-dom";
 import { 
     Container, 
@@ -31,6 +31,9 @@ import {
 } from "react-bootstrap-icons";
 import VideoList from "../components/VideoList";
 import { get_video_detail } from "../http/videoAPI";
+import { subscribe, unsubscribe } from "../http/subscriptionAPI"; // Импортируем API подписок
+import { Context } from "..";
+import { send_dislike, send_like } from "../http/reactionAPI";
 
 const VideoDetail = observer(() => {
     const { id } = useParams();
@@ -43,6 +46,8 @@ const VideoDetail = observer(() => {
     const [disliked, setDisliked] = useState(false);
     const [saved, setSaved] = useState(false);
     const [subscribed, setSubscribed] = useState(false);
+    const [subscriberCount, setSubscriberCount] = useState(0);
+    const [subscriptionLoading, setSubscriptionLoading] = useState(false);
     
     // Состояния для лайков/дизлайков
     const [likesCount, setLikesCount] = useState(0);
@@ -65,19 +70,20 @@ const VideoDetail = observer(() => {
         }
     }, [id]);
 
-    // Заглушка для API запроса видео
     const fetchVideoData = async () => {
         try {
             setLoading(true);
-            // Здесь будет реальный API запрос
-            // const data = await get_video_detail(id);
-
-            const video = await get_video_detail(id);
+            const video = await get_video_detail(id, );
             
             setVideo(video);
-            // setViewsCount(mockVideo.views || 0);
-            // setLikesCount(mockVideo.likes || 0);
-            // setDislikesCount(mockVideo.dislikes || 0);
+            // Устанавливаем состояние подписки из полученных данных
+            setSubscribed(video.is_subscribed || false);
+            setSubscriberCount(video.subscriber_count || 0);
+            setLiked(video.is_liked || false);
+            setDisliked(video.is_disliked || false);
+            setViewsCount(video.views || 0);
+            setLikesCount(video.like_count || 0);
+            setDislikesCount(video.dislike_count || 0);
             setLoading(false);
         } catch (err) {
             console.error("Ошибка при загрузке видео:", err);
@@ -144,37 +150,68 @@ const VideoDetail = observer(() => {
         // Можно использовать тот же VideoList компонент
     };
 
-    const handleLike = () => {
-        if (liked) {
-            setLiked(false);
-            setLikesCount(prev => prev - 1);
-        } else {
-            if (disliked) {
-                setDisliked(false);
-                setDislikesCount(prev => prev - 1);
+    // Функция для обработки подписки/отписки
+    const handleSubscribe = async () => {
+        if (!video?.channel?.id || subscriptionLoading) return;
+        
+        try {
+            setSubscriptionLoading(true);
+            
+            if (subscribed) {
+                await unsubscribe(video.channel.id);
+                setSubscribed(false);
+                setSubscriberCount(prev => Math.max(0, prev - 1));
+            } else {
+                await subscribe(video.channel.id);
+                setSubscribed(true);
+                setSubscriberCount(prev => prev + 1);
             }
-            setLiked(true);
-            setLikesCount(prev => prev + 1);
+        } catch (err) {
+            console.error("Ошибка при изменении подписки:", err);
+            alert(err.response?.data?.message || "Произошла ошибка при изменении подписки");
+        } finally {
+            setSubscriptionLoading(false);
         }
     };
 
-    const handleDislike = () => {
-        if (disliked) {
-            setDisliked(false);
-            setDislikesCount(prev => prev - 1);
-        } else {
+    const handleLike = async () => {
+        try {
+            await send_like(video.id);
             if (liked) {
                 setLiked(false);
                 setLikesCount(prev => prev - 1);
+            } else {
+                if (disliked) {
+                    setDisliked(false);
+                    setDislikesCount(prev => prev - 1);
+                }
+                setLiked(true);
+                setLikesCount(prev => prev + 1);
             }
-            setDisliked(true);
-            setDislikesCount(prev => prev + 1);
+        } catch (err) {
+            console.error("Ошибка при отметке лайка:", err);
+            alert(err.response?.data?.message || "Произошла ошибка при отметке лайка");
         }
     };
 
-    const handleSubscribe = () => {
-        setSubscribed(!subscribed);
-        // Здесь будет API запрос на подписку
+    const handleDislike = async () => {
+        try {
+            await send_dislike(video.id);
+            if (disliked) {
+                setDisliked(false);
+                setDislikesCount(prev => prev - 1);
+            } else {
+                if (liked) {
+                    setLiked(false);
+                    setLikesCount(prev => prev - 1);
+                }
+                setDisliked(true);
+                setDislikesCount(prev => prev + 1);
+            }
+        } catch (err) {
+            console.error("Ошибка при отметке дизлайка:", err);
+            alert(err.response?.data?.message || "Произошла ошибка при отметке дизлайка");
+        }
     };
 
     const handleSave = () => {
@@ -295,11 +332,11 @@ const VideoDetail = observer(() => {
                         <div className="ratio ratio-16x9">
                             <video
                                 controls
-                                poster={video.thumbnail_key || video.image}
+                                poster={video.image}
                                 className="w-100"
                                 style={{ backgroundColor: '#000' }}
                             >
-                                <source src={video.video_file} type="video/mp4" />
+                                <source src={video.video_file} />
                                 Ваш браузер не поддерживает видео тег.
                             </video>
                         </div>
@@ -384,7 +421,7 @@ const VideoDetail = observer(() => {
                                                 <div>
                                                     <h6 className="mb-0">{video.channel.user.username || video.channel.user.email}</h6>
                                                     <small className="text-muted">
-                                                        {formatNumber(video.channel.subscribers || 0)} подписчиков
+                                                        {formatNumber(subscriberCount)} подписчиков
                                                     </small>
                                                 </div>
                                             </div>
@@ -395,7 +432,18 @@ const VideoDetail = observer(() => {
                                         variant={subscribed ? "secondary" : "danger"} 
                                         size="sm"
                                         onClick={handleSubscribe}
+                                        disabled={subscriptionLoading}
                                     >
+                                        {subscriptionLoading ? (
+                                            <Spinner
+                                                as="span"
+                                                animation="border"
+                                                size="sm"
+                                                role="status"
+                                                aria-hidden="true"
+                                                className="me-1"
+                                            />
+                                        ) : null}
                                         {subscribed ? 'Отписаться' : 'Подписаться'}
                                     </Button>
                                 </div>

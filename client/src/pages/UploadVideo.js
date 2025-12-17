@@ -16,7 +16,7 @@ const VideoUploadPage = () => {
   // Разрешенные типы файлов
   const allowedVideoTypes = [
     'video/mp4',
-    'video/mov',
+    'video/quicktime',
     'video/avi',
     'video/x-matroska', // .mkv
   ];

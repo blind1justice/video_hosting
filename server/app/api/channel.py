@@ -43,7 +43,7 @@ async def get_with_videos(
     channel_service: Annotated[ChannelService, Depends(channel_service)],
     current_user: UserSchemaRead = Depends(get_current_user_with_channel) 
 ):
-    res = await channel_service.get_one_with_vides(current_user.channel.id)
+    res = await channel_service.get_one_with_videos(current_user.channel.id)
     return res
 
 
@@ -53,5 +53,5 @@ async def get_channel_with_videos(
     channel_service: Annotated[ChannelService, Depends(channel_service)],
     current_user: UserSchemaRead = Depends(get_current_user) 
 ):
-    res = await channel_service.get_one_with_vides(channel_id)
+    res = await channel_service.get_one_with_videos(channel_id)
     return res

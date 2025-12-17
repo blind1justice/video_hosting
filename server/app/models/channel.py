@@ -16,6 +16,7 @@ class Channel(Base):
 
     user = relationship('User', back_populates='channel')
     videos = relationship('Video', back_populates='channel')
+    subscriptions = relationship('Subscription', back_populates='channel')
     
     def to_read_model(self):
         return TinyChannelSchemaRead.model_validate(self)

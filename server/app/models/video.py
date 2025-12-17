@@ -19,6 +19,7 @@ class Video(Base):
     thumbnail_key: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     channel = relationship('Channel', back_populates='videos')
+    reactions = relationship('Reaction', back_populates='video')
 
     def to_read_model(self):
         from schemas.video import TinyVideoSchemaRead
