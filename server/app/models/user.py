@@ -18,6 +18,7 @@ class User(Base):
     channel = relationship('Channel', uselist=False, back_populates='user')
     subscriptions = relationship('Subscription', back_populates='subscriber')
     reactions = relationship('Reaction', back_populates='user')
+    comments = relationship('Comment', back_populates='user')
 
     def to_read_model(self):
         from schemas.user import UserSchemaWithouChannelRead

@@ -1,9 +1,10 @@
 from models.video import Video
 from models.channel import Channel
 from models.reaction import Reaction
+from models.comment import Comment
 from models.enums import ReactionType
 from repositories.base import BaseRepository
-from sqlalchemy import select, and_, exists, func
+from sqlalchemy import select, or_, and_, exists, func
 from sqlalchemy.orm import joinedload
 from schemas.video import VideoSchemaWithChannelRead, VideoSchemaWithChannelDetailRead
 from db.session import async_session
@@ -56,6 +57,22 @@ class VideoRepository(BaseRepository):
                 .label("dislike_count")
             )
 
+            comment_count = (
+                select(func.count(Comment.id))
+                .where(
+                    or_(
+                        Comment.video_id == Video.id,
+                        Comment.parent_id.in_(
+                            select(Comment.id)
+                            .where(Comment.video_id == Video.id)
+                            .correlate(Video)
+                        )
+                    )
+                )
+                .scalar_subquery()
+                .label("comment_count")
+            )
+
             query = (
                 select(Video)
                 .join(Video.channel)
@@ -63,7 +80,7 @@ class VideoRepository(BaseRepository):
                 .options(
                     joinedload(Video.channel).joinedload(Channel.user)
                 )
-                .add_columns(sub_count, like_count, dislike_count)
+                .add_columns(sub_count, like_count, dislike_count, comment_count)
                 .where(Video.id == video_id)
             )
             
@@ -103,9 +120,10 @@ class VideoRepository(BaseRepository):
                 videoschema.subscriber_count = row[1]
                 videoschema.like_count = row[2]
                 videoschema.dislike_count = row[3]
-                videoschema.is_subscribed = row[4] if user_id else False
-                videoschema.is_liked = row[5] if user_id else False
-                videoschema.is_disliked = row[6] if user_id else False
+                videoschema.comment_count = row[4]
+                videoschema.is_subscribed = row[5] if user_id else False
+                videoschema.is_liked = row[6] if user_id else False
+                videoschema.is_disliked = row[7] if user_id else False
                 return videoschema
             else:
                 return None

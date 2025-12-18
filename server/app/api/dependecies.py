@@ -8,12 +8,17 @@ from services.auth_service import AuthService
 from services.user_service import UserService
 from services.video_service import VideoService
 from services.channel_service import ChannelService
+from services.comment_service import CommentService
 from services.subscription_service import SubscriptionService
 from fastapi.security import OAuth2PasswordBearer
 from schemas.user import UserSchemaRead
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/auth/login-form')
+
+
+def comment_service():
+    return CommentService()
 
 
 def reaction_service():

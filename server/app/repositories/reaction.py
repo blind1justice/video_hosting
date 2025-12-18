@@ -20,12 +20,15 @@ class ReactionRepository(BaseRepository):
             else:
                 return None
 
-    async def delete_by_user_and_video(self, user_id, video_id):
+    async def get_by_user_and_comment(self, user_id, comment_id):
         async with async_session() as session:
-            query = delete(self.model).where(
+            query = select(self.model).where(
                 (self.model.user_id==user_id) &
-                (self.model.video_id==video_id)
+                (self.model.comment_id==comment_id)
             )
-            result = await session.execute(query)
-            await session.commit()
-            return result.rowcount > 0
+            res = await session.execute(query)
+            row = res.one_or_none()
+            if row:
+                return row[0].to_read_model()
+            else:
+                return None

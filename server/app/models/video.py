@@ -20,6 +20,7 @@ class Video(Base):
 
     channel = relationship('Channel', back_populates='videos')
     reactions = relationship('Reaction', back_populates='video')
+    comments = relationship('Comment', back_populates='video')
 
     def to_read_model(self):
         from schemas.video import TinyVideoSchemaRead

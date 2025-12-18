@@ -23,7 +23,8 @@ class AuthService:
         user = await self.user_service.add_one(new_user)
         token_data = {
             'sub': str(user.id),
-            'email': user.email
+            'email': user.email,
+            'username': user.username
         }
         access_token = create_access_token(token_data)
         return user, access_token
@@ -40,7 +41,8 @@ class AuthService:
             ) 
         token_data = {
             'sub': str(user.id),
-            'email': user.email
+            'email': user.email,
+            'username': user.username
         }
         access_token = create_access_token(token_data)
         return user, access_token
@@ -49,7 +51,8 @@ class AuthService:
         user = await self.user_service.get_one(user_id)
         token_data = {
             'sub': str(user.id),
-            'email': user.email
+            'email': user.email,
+            'username': user.username
         }
         access_token = create_access_token(token_data)
         return user, access_token 

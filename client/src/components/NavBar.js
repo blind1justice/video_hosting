@@ -44,7 +44,7 @@ const NavBar = observer(() => {
                 {user.isAuth ? 
                 <>
                     <NavLink to={'/profile'}>
-                      <Button className="me-2">Мой профиль</Button>
+                      <Button className="me-2">{user.user.username || user.user.email}</Button>
                     </NavLink>
                     <NavLink to={'/videos'}>
                       <Button variant="outline-danger" onClick={logOut}>Выйти</Button>

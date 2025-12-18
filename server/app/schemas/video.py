@@ -71,6 +71,7 @@ class VideoSchemaWithChannelDetailRead(VideoSchemaWithChannelRead):
     subscriber_count: Optional[int] = 0
     like_count: Optional[int] = 0
     dislike_count: Optional[int] = 0
+    comment_count: Optional[int] = 0
 
     class Config:
         from_attributes = True
