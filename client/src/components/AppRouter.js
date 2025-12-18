@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import {Navigate, Routes, Route} from "react-router-dom";
-import { authRoutes, publicRoutes } from "../routes";
+import { moderatorRoutes, authRoutes, publicRoutes } from "../routes";
 import { Context } from "..";
 
 const AppRouter = () => {
@@ -9,6 +9,10 @@ const AppRouter = () => {
 
     return (
         <Routes>
+            {user.isAuth && (user.user.role === "moderator" || user.user.role === "admin")
+            && moderatorRoutes.map(({path, Component}) => 
+                <Route key={path} path={path} element={<Component />} exact />
+            )}
             {user.isAuth && authRoutes.map(({path, Component}) => 
                 <Route key={path} path={path} element={<Component />} exact />
             )}

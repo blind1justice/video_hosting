@@ -24,7 +24,8 @@ class AuthService:
         token_data = {
             'sub': str(user.id),
             'email': user.email,
-            'username': user.username
+            'username': user.username,
+            'role': user.role.value
         }
         access_token = create_access_token(token_data)
         return user, access_token
@@ -42,7 +43,8 @@ class AuthService:
         token_data = {
             'sub': str(user.id),
             'email': user.email,
-            'username': user.username
+            'username': user.username,
+            'role': user.role.value
         }
         access_token = create_access_token(token_data)
         return user, access_token
@@ -52,7 +54,8 @@ class AuthService:
         token_data = {
             'sub': str(user.id),
             'email': user.email,
-            'username': user.username
+            'username': user.username,
+            'role': user.role.value
         }
         access_token = create_access_token(token_data)
         return user, access_token 

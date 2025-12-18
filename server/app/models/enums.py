@@ -16,3 +16,9 @@ class VideoStatus(enum.Enum):
 class ReactionType(enum.Enum):
     LIKE = 'like'
     DISLIKE = 'dislike'
+
+
+class ReportStatus(enum.Enum):
+    PENDING = 'pending'
+    RESOLVED = 'resolved'
+    REJECTED = 'rejected'

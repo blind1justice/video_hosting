@@ -47,6 +47,7 @@ import {
   edit_comment
 } from "../http/commentAPI"; // Убедитесь, что файл commentAPI.js существует
 import { Context } from "..";
+import { left_report } from "../http/reportAPI";
 
 const VideoDetail = observer(() => {
   const {user} = useContext(Context);
@@ -84,6 +85,9 @@ const VideoDetail = observer(() => {
 
   const [replyingTo, setReplyingTo] = useState(null); // id комментария, на который отвечаем
   const [replyText, setReplyText] = useState("");
+
+  const [reportReason, setReportReason] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -157,9 +161,9 @@ const VideoDetail = observer(() => {
     try {
       setSubmittingComment(true);
       await left_comment_on_video(commentText, parseInt(id));
-  
       setNewComment("");
-  
+      setReplies({});
+      setExpandedReplies({});
       await fetchComments();
       setCommentsCount(prev => prev + 1);
   
@@ -246,6 +250,8 @@ const VideoDetail = observer(() => {
   const handleLikeOnComment = async (comment) => {
     try {
         await send_like_on_comment(comment.id);
+        setReplies({});
+        setExpandedReplies({});
         await fetchComments();
       } catch (err) {
         alert("Ошибка лайка");
@@ -255,6 +261,8 @@ const VideoDetail = observer(() => {
   const handleDisLikeOnComment = async (comment) => {
     try {
         await send_dislike_on_comment(comment.id);
+        setReplies({});
+        setExpandedReplies({});
         await fetchComments();
       } catch (err) {
         alert("Ошибка дизлайка");
@@ -266,9 +274,10 @@ const VideoDetail = observer(() => {
   
     try {
       await left_comment_on_comment(replyText.trim(), parentId); // используем ваш API с parent_id
-  
       setReplyText("");
       setReplyingTo(null);
+      setReplies({});
+      setExpandedReplies({});
       setCommentsCount(prev => prev + 1);
       await fetchComments();
     } catch (err) {
@@ -285,14 +294,32 @@ const VideoDetail = observer(() => {
   
     try {
       await edit_comment(commentId, editText.trim());
-  
       setEditingCommentId(null);
       setEditText("");
-  
+      setReplies({});
+      setExpandedReplies({});
       await fetchComments();
     } catch (err) {
       console.error("Ошибка при редактировании:", err);
       alert(err.response?.data?.message || "Не удалось сохранить изменения");
+    }
+  };
+
+  const handleReportSubmit = async (e) => {
+    e.preventDefault();
+    if (!reportReason.trim()) return;
+  
+    const reportText = reportReason.trim();
+  
+    try {
+      setSubmittingReport(true);
+      await left_report(parseInt(id), reportText);
+      setReportReason("");
+    } catch (err) {
+      console.error("Ошибка при отправке жалобы:", err);
+      alert(err.response?.data?.message || "Не удалось отправить жалобу");
+    } finally {
+      setSubmittingReport(false);
     }
   };
 
@@ -584,8 +611,6 @@ const VideoDetail = observer(() => {
               <h3 className="mb-3">{video.title}</h3>
               <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
                 <div className="text-muted small">
-                  <Eye className="me-1" />
-                  <span className="me-3">{formatNumber(viewsCount)} просмотров</span>
                   <Calendar className="me-1" />
                   <span>{formatDate(video.created_at)}</span>
                 </div>
@@ -710,16 +735,21 @@ const VideoDetail = observer(() => {
 
         {/* Правая колонка */}
         <Col lg={4}>
-          <Card className="sticky-top" style={{ top: "20px" }}>
-            <Card.Header className="bg-white">
-              <h6 className="mb-0">Следующее</h6>
-            </Card.Header>
-            <Card.Body>
-              <div className="text-center py-3 text-muted">
-                <small>Похожие видео и видео автора будут здесь</small>
-              </div>
-            </Card.Body>
-          </Card>
+            <Form onSubmit={handleReportSubmit} className="mb-4">
+              <InputGroup>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  placeholder="Не понравилось видео? Оставьте жалобу"
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  style={{ resize: "none" }}
+                />
+                <Button variant="primary" type="submit" disabled={submittingReport || !reportReason.trim()}>
+                  {submittingReport ? <Spinner size="sm" /> : <Send />}
+                </Button>
+              </InputGroup>
+            </Form>
         </Col>
       </Row>
     </Container>

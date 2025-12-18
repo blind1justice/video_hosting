@@ -4,6 +4,15 @@ import Videos from "./pages/Videos";
 import UploadVideo from "./pages/UploadVideo";
 import PublicProfile from "./pages/PublicProfile";
 import VideoDetail from "./pages/VideoDetail";
+import Reports from "./pages/Reports";
+
+
+export const moderatorRoutes = [
+    {
+        path: '/reports',
+        Component: Reports
+    }
+]
 
 
 export const authRoutes = [

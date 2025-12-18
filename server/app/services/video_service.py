@@ -12,10 +12,24 @@ from schemas.video import VideoUploadSchema
 class VideoService(BaseService):
     repo: VideoRepository = VideoRepository()
     
-    
     def __init__(self, s3_service: S3Service, video_processor_service: VideoProcessorService):
         self.s3_service = s3_service
         self.video_processor_service = video_processor_service
+
+    async def delete_from_channel(self, channel_id, video_id, is_moderator=False):
+        video = await self.repo.get_one(video_id)
+        if not video:
+            raise HTTPException(
+                detail='Video not found',
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        if video.channel_id != channel_id and not is_moderator:
+             raise HTTPException(
+                detail="It's not your video", 
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        res = await self.repo.delete_one(video_id)
+        return res
 
     async def upload_one(self, channel_id, title, video, original_format, description=None):
         storage_key = f'videos/{uuid.uuid4()}_{title}'
@@ -44,7 +58,6 @@ class VideoService(BaseService):
         })
 
         return new_video
-    
 
     async def get_all_with_channels(self, channel_id=None):
         videos = await self.repo.get_all_with_channels(channel_id)
@@ -52,7 +65,6 @@ class VideoService(BaseService):
             image = await self.s3_service.get_file_url(video.thumbnail_key)
             video.image = image
         return videos
-
 
     async def get_one_with_channel(self, video_id, user_id):
         video = await self.repo.get_one_with_channel(video_id, user_id)

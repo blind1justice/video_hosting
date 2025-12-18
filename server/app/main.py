@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from config.settings import settings
-from api import channel, user, video, auth, subscription, reaction, comment
+from api import channel, user, video, auth, subscription, reaction, comment, report
 
 
 app = FastAPI()
@@ -13,6 +13,7 @@ app.include_router(video.router)
 app.include_router(subscription.router)
 app.include_router(reaction.router)
 app.include_router(comment.router)
+app.include_router(report.router)
 
 
 app.add_middleware(

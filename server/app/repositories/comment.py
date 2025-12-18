@@ -105,6 +105,33 @@ class CommentRepository(BaseRepository):
                 .order_by(Comment.id)
             )
 
+            if user_id is not None:
+                like_exists = (
+                    exists()
+                    .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.LIKE))
+                    .where(Reaction.user_id == user_id)
+                    .correlate(Comment)
+                )
+
+                dislike_exists = (
+                    exists()
+                    .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.DISLIKE))
+                    .where(Reaction.user_id == user_id)
+                    .correlate(Comment)
+                )
+
+                query = query.add_columns( 
+                    like_exists.label("is_liked"),
+                    dislike_exists.label("is_disliked")
+                )
+
             res = await session.execute(query)
-            res = [CommetExtendedSchemaRead.model_validate(row[0]) for row in res.all()]
-            return res
+            rows = []
+            for row in res.all():
+                comment_schema = CommetExtendedSchemaRead.model_validate(row[0])
+                comment_schema.like_count = row[1]
+                comment_schema.dislike_count = row[2]
+                comment_schema.is_liked = row[3] if user_id else False
+                comment_schema.is_disliked = row[4] if user_id else False
+                rows.append(comment_schema)
+            return rows

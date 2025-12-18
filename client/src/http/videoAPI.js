@@ -19,6 +19,12 @@ export const upload_video = async (formData) => {
 };
 
 
+export const delete_video = async (video_id) => {
+  const { data } = await $authHost.delete(`api/videos/${video_id}`);
+  return data;
+}
+
+
 export const get_videos = async () => {
   const { data } = await $host.get('api/videos/');
   return data;

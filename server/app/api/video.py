@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from api.dependecies import video_service, get_current_user_with_channel, get_optional_user
 from services.video_service import VideoService
 from schemas.user import UserSchemaRead
+from models.enums import Role
 
 
 router = APIRouter(prefix='/api/videos', tags=['Videos'])
@@ -25,6 +26,22 @@ async def upload_video(
         )
 
     return await video_service.upload_one(current_user.channel.id, title, video_file.file, video_file.content_type, description)
+
+
+@router.delete('/{video_id}')
+async def delete_video(
+    video_service: Annotated[VideoService, Depends(video_service)],
+    video_id: int,
+    current_user: UserSchemaRead = Depends(get_optional_user)
+):
+    if not current_user:
+        raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid authentication credentials',
+            )
+    is_moderator = current_user.role in [Role.ADMIN, Role.MODERATOR]
+    res = await video_service.delete_from_channel(current_user.channel.id, video_id, is_moderator)
+    return res
 
 
 @router.get('/')

@@ -26,8 +26,21 @@ const NavBar = observer(() => {
             <Navbar.Toggle aria-controls="navbarScroll" />
             <Navbar.Collapse id="navbarScroll">
               <Nav className="me-auto">
-                {/* <Nav.Link href="#action1"></Nav.Link> */}
-                {/* <Nav.Link href="#action2">Link</Nav.Link> */}
+                {user.isAuth && (user.user.role === "moderator" || user.user.role === "admin") &&
+                  <NavLink 
+                  to={'/reports'}
+                    style={{
+                      textDecoration: "none",
+                      padding: "2px 16px",
+                      borderRadius: "4px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      color: "black"
+                    }}
+                  >
+                    Жалобы
+                  </NavLink>
+                }
               </Nav>
 
               <Form className="d-flex mx-auto">

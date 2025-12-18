@@ -9,12 +9,20 @@ from services.user_service import UserService
 from services.video_service import VideoService
 from services.channel_service import ChannelService
 from services.comment_service import CommentService
+from services.report_service import ReportService
 from services.subscription_service import SubscriptionService
 from fastapi.security import OAuth2PasswordBearer
 from schemas.user import UserSchemaRead
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/auth/login-form')
+
+
+def report_service():
+    s3_service = S3Service()
+    video_processor_service = VideoProcessorService()
+    video_service = VideoService(s3_service, video_processor_service)
+    return ReportService(s3_service, video_service)
 
 
 def comment_service():
@@ -84,12 +92,12 @@ async def get_current_user_with_channel(
     return current_user
 
 
-async def get_current_admin(
+async def get_current_moderator(
     current_user: UserSchemaRead = Depends(get_current_user)
 ):
-    if current_user.role != Role.ADMIN:
+    if current_user.role not in [Role.ADMIN, Role.MODERATOR]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Admin access required'
+            detail='Moderator access required'
         )
     return current_user

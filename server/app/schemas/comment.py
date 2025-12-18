@@ -35,6 +35,7 @@ class CommentSchemaRead(BaseModel):
     class Config:
         from_attributes = True
 
+
 class CommentUserSchemaRead(BaseModel):
     id: int
     email: Optional[EmailStr]
