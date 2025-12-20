@@ -1,5 +1,5 @@
 from models.base import Base
-from sqlalchemy import CheckConstraint, Boolean, Integer, ForeignKey, Text
+from sqlalchemy import CheckConstraint, Boolean, Integer, ForeignKey, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from schemas.comment import CommentSchemaRead
 
@@ -20,7 +20,7 @@ class Comment(Base):
     video_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('videos.id', ondelete='CASCADE'), nullable=True)
     parent_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('comments.id', ondelete='CASCADE'), nullable=True)
     content: Mapped[str] = mapped_column(Text())
-    is_edited: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_edited: Mapped[bool] = mapped_column(Boolean, server_default=text('false'))
 
     user = relationship('User', back_populates='comments')
     parent = relationship('Comment', back_populates='comments', remote_side=[id])

@@ -8,7 +8,6 @@ from services.base import BaseService
 from schemas.video import VideoUploadSchema
 
 
-
 class VideoService(BaseService):
     repo: VideoRepository = VideoRepository()
     

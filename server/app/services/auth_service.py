@@ -1,5 +1,7 @@
 from schemas.user import RegisterSchema, UserSchemaAdd, LoginSchema
+from schemas.user_preferences import UserPreferencesAdd
 from services.user_service import UserService
+from services.user_preferences_service import UserPreferencesService
 from utils.security import get_password_hash, verify_password, create_access_token, verify_token
 
 from fastapi import HTTPException, status
@@ -7,8 +9,9 @@ from fastapi import HTTPException, status
 
 
 class AuthService:
-    def __init__(self, user_service: UserService):
+    def __init__(self, user_service: UserService, user_preferences_service: UserPreferencesService):
         self.user_service = user_service
+        self.user_preferences_service = user_preferences_service
 
     async def register(self, register_data: RegisterSchema):
         if await self.user_service.get_user_by_email(register_data.email):
@@ -21,6 +24,7 @@ class AuthService:
             username=register_data.username
         )
         user = await self.user_service.add_one(new_user)
+        await self.user_preferences_service.add_one(UserPreferencesAdd(user_id=user.id))
         token_data = {
             'sub': str(user.id),
             'email': user.email,

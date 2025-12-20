@@ -1,5 +1,5 @@
 from datetime import datetime
-from models.enums import Role
+from models.enums import Role, AvailableLanguages
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
@@ -32,6 +32,19 @@ class UserChannelSchemaRead(BaseModel):
         from_attributes = True
 
 
+class UserUserPreferencesRead(BaseModel):
+    id: int
+    user_id: int
+    autoplay: bool
+    language: AvailableLanguages
+    notifications_enabled: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class UserSchemaRead(BaseModel):
     id: int
     hashed_password: str
@@ -42,6 +55,7 @@ class UserSchemaRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     channel: Optional[UserChannelSchemaRead] = None
+    user_preferences: UserUserPreferencesRead
 
     class Config:
         from_attributes = True

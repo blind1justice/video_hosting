@@ -13,9 +13,10 @@ class User(Base):
     username: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(length=100))
     avatar_url: Mapped[str | None] = mapped_column(String(length=255), nullable=True)
-    role: Mapped[Role] = mapped_column(Enum(Role), default=Role.USER)
+    role: Mapped[Role] = mapped_column(Enum(Role), server_default=Role.USER.name)
 
     channel = relationship('Channel', uselist=False, back_populates='user')
+    user_preferences = relationship('UserPreferences', uselist=False, back_populates='user')
     subscriptions = relationship('Subscription', back_populates='subscriber')
     reactions = relationship('Reaction', back_populates='user')
     comments = relationship('Comment', back_populates='user')

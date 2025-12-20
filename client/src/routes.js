@@ -5,6 +5,7 @@ import UploadVideo from "./pages/UploadVideo";
 import PublicProfile from "./pages/PublicProfile";
 import VideoDetail from "./pages/VideoDetail";
 import Reports from "./pages/Reports";
+import Preferences from "./pages/Preferences";
 
 
 export const moderatorRoutes = [
@@ -19,6 +20,10 @@ export const authRoutes = [
     {
         path: '/profile',
         Component: Profile
+    },
+    {
+        path: '/preferences',
+        Component: Preferences
     },
     {
         path: 'upload-video',

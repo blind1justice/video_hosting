@@ -2,7 +2,7 @@ from models.video import Video
 from models.channel import Channel
 from models.reaction import Reaction
 from models.comment import Comment
-from models.enums import ReactionType
+from models.enums import ReactionType, VideoStatus
 from repositories.base import BaseRepository
 from sqlalchemy import select, or_, and_, exists, func
 from sqlalchemy.orm import joinedload
@@ -23,6 +23,7 @@ class VideoRepository(BaseRepository):
                 .options(
                     joinedload(Video.channel).joinedload(Channel.user)
                 )
+                .where(Video.status == VideoStatus.PROCESSED)
                 .order_by(Video.id.desc())
             )
 

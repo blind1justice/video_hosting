@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     jwt_secret_key: str
     jwt_algorithm: str = 'HS256'
-    jwt_access_token_expire_minutes: int = 30
+    jwt_access_token_expire_minutes: int = 60 * 3
 
     minio_endpoint: str = 'http://localhost:9000'
     minio_access_key: str = 'minioadmin'

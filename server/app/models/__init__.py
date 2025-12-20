@@ -1,4 +1,5 @@
 from models.user import User
+from models.user_preference import UserPreferences
 from models.channel import Channel
 from models.subscription import Subscription
 from models.reaction import Reaction

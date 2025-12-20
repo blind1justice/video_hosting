@@ -42,6 +42,7 @@ class UserRepository(BaseRepository):
             query = (
                 select(self.model)
                 .options(joinedload(self.model.channel))
+                .options(joinedload(self.model.user_preferences))
                 .add_columns(sub_count)
                 .where(self.model.id == user_id)
             )
@@ -60,8 +61,9 @@ class UserRepository(BaseRepository):
             row = res.one_or_none()
             if row:
                 userschema = UserSchemaRead.model_validate(row[0])
-                userschema.channel.subscriber_count = row[1] if userschema.channel else 0
-                userschema.channel.is_subscribed = row[2] if warden_id else False
+                if userschema.channel:
+                    userschema.channel.subscriber_count = row[1] if userschema.channel else 0
+                    userschema.channel.is_subscribed = row[2] if warden_id else False
                 return userschema
             else:
                 return None

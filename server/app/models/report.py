@@ -9,14 +9,14 @@ class Report(Base):
     __tablename__ = 'reports'
 
     __table_args__ = (
-        UniqueConstraint('reporter_id', 'video_id', 'status', name='uq_reporter_video'),
+        UniqueConstraint('reporter_id', 'video_id', name='uq_reporter_video'),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     reporter_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
     video_id: Mapped[int] = mapped_column(Integer, ForeignKey('videos.id', ondelete='CASCADE'))
     reason: Mapped[str] = mapped_column(Text)
-    status: Mapped[ReportStatus] = mapped_column(Enum(ReportStatus), default=ReportStatus.PENDING)
+    status: Mapped[ReportStatus] = mapped_column(Enum(ReportStatus), server_default=ReportStatus.PENDING.name)
 
     reporter = relationship('User', back_populates='reports')
     video = relationship('Video', back_populates='reports')

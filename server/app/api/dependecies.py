@@ -6,6 +6,7 @@ from services.video_processor_service import VideoProcessorService
 from services.s3_service import S3Service
 from services.auth_service import AuthService
 from services.user_service import UserService
+from services.user_preferences_service import UserPreferencesService
 from services.video_service import VideoService
 from services.channel_service import ChannelService
 from services.comment_service import CommentService
@@ -41,9 +42,14 @@ def user_service():
     return UserService()
 
 
+def user_preferences_service():
+    return UserPreferencesService()
+
+
 def auth_service():
     user_service = UserService()
-    return AuthService(user_service)
+    user_preferences_service = UserPreferencesService()
+    return AuthService(user_service, user_preferences_service)
 
 
 def channel_service():

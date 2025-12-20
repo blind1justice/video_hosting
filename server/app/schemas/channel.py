@@ -1,11 +1,7 @@
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING, List
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from models.enums import Role, VideoStatus
-
-if TYPE_CHECKING:
-    from schemas.channel import UserSchemaWithouChannelRead
-    from schemas.video import TinyVideoSchemaRead
 
 
 class TinyChannelSchemaRead(BaseModel):
@@ -65,4 +61,3 @@ class ChannelAddSchema(BaseModel):
     description: Optional[str] = None
     country: Optional[str] = None
     language: Optional[str] = None
-

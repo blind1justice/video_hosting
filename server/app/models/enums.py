@@ -22,3 +22,8 @@ class ReportStatus(enum.Enum):
     PENDING = 'pending'
     RESOLVED = 'resolved'
     REJECTED = 'rejected'
+
+
+class AvailableLanguages(enum.Enum):
+    RUSSIAN = 'russian'
+    ENGLISH = 'english'

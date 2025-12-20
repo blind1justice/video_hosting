@@ -45,7 +45,8 @@ import {
   get_all_comments_for_comment,
   delete_comment,
   edit_comment
-} from "../http/commentAPI"; // Убедитесь, что файл commentAPI.js существует
+} from "../http/commentAPI";
+import { get_me } from "../http/userAPI";
 import { Context } from "..";
 import { left_report } from "../http/reportAPI";
 
@@ -56,6 +57,7 @@ const VideoDetail = observer(() => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [video, setVideo] = useState(null);
+  const [userPreferences, setUserPreferences] = useState({});
 
   // Взаимодействия
   const [liked, setLiked] = useState(false);
@@ -67,7 +69,6 @@ const VideoDetail = observer(() => {
 
   const [likesCount, setLikesCount] = useState(0);
   const [dislikesCount, setDislikesCount] = useState(0);
-  const [viewsCount, setViewsCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
 
   // Комментарии
@@ -91,6 +92,7 @@ const VideoDetail = observer(() => {
 
   useEffect(() => {
     if (id) {
+      fetchUserPreferences();
       fetchVideoData();
       fetchComments();
     }
@@ -105,7 +107,6 @@ const VideoDetail = observer(() => {
       setSubscriberCount(videoData.subscriber_count || 0);
       setLiked(videoData.is_liked || false);
       setDisliked(videoData.is_disliked || false);
-      setViewsCount(videoData.views || 0);
       setLikesCount(videoData.like_count || 0);
       setDislikesCount(videoData.dislike_count || 0);
       setCommentsCount(videoData.comment_count || 0);
@@ -129,6 +130,19 @@ const VideoDetail = observer(() => {
       setLoadingComments(false);
     }
   };
+
+  const fetchUserPreferences = async () => {
+    try{
+      const data = await get_me();
+      setUserPreferences(data.user_preferences);
+    } catch (err) {
+      setUserPreferences({
+        "autoplay": false,
+        "language": "russian",
+        "notifications_enabled": true
+      });
+    }
+  }
 
   const fetchReplies = async (parentId) => {
     if (replies[parentId]) return; // Уже загружены
@@ -598,7 +612,7 @@ const VideoDetail = observer(() => {
           {/* Видеоплеер */}
           <Card className="mb-4 shadow-sm">
             <div className="ratio ratio-16x9">
-              <video controls poster={video.image} className="w-100">
+              <video controls autoPlay={userPreferences.autoplay} poster={video.image} className="w-100">
                 <source src={video.video_file} />
                 Ваш браузер не поддерживает видео.
               </video>
