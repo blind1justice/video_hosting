@@ -41,7 +41,7 @@ const NavBar = observer(() => {
                     Настройки
                   </NavLink>
                 }
-                {user.isAuth && (user.user.role === "moderator" || user.user.role === "admin") &&
+                {user.isAuth && (user.user.role === "MODERATOR" || user.user.role === "ADMIN") &&
                   <NavLink 
                   to={'/reports'}
                     style={{

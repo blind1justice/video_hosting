@@ -138,7 +138,7 @@ const VideoDetail = observer(() => {
     } catch (err) {
       setUserPreferences({
         "autoplay": false,
-        "language": "russian",
+        "language": "RUSSIAN",
         "notifications_enabled": true
       });
     }

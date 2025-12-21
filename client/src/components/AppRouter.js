@@ -9,7 +9,7 @@ const AppRouter = () => {
 
     return (
         <Routes>
-            {user.isAuth && (user.user.role === "moderator" || user.user.role === "admin")
+            {user.isAuth && (user.user.role === "MODERATOR" || user.user.role === "ADMIN")
             && moderatorRoutes.map(({path, Component}) => 
                 <Route key={path} path={path} element={<Component />} exact />
             )}

@@ -1,137 +1,226 @@
-from repositories.base import BaseRepository
-from models import Comment, User, Reaction, Video
-from models.enums import ReactionType
-from sqlalchemy import delete, select, func, exists
-from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy import text
 from db.session import async_session
+from models.comment import Comment
+from models.enums import ReactionType
 from schemas.comment import CommetExtendedSchemaRead
-
+from repositories.base import BaseRepository
 
 class CommentRepository(BaseRepository):
     model = Comment
 
-    async def get_all_for_video(self, video_id: int, user_id=None):
+    async def get_all_for_video(self, video_id: int, user_id: int | None = None):
+        select_parts = """
+            c.id AS comment_id,
+            c.video_id,
+            c.parent_id,
+            c.content,
+            c.is_edited,
+            c.created_at AS comment_created_at,
+            c.updated_at AS comment_updated_at,
+            
+            u.id AS user_id,
+            u.email AS user_email,
+            u.username AS user_username,
+            u.avatar_url AS user_avatar_url,
+            u.role AS user_role,
+            u.created_at AS user_created_at,
+            u.updated_at AS user_updated_at,
+            
+            COALESCE(replies_cnt.replies_count, 0) AS replies_count,
+            COALESCE(like_cnt.like_count, 0) AS like_count,
+            COALESCE(dislike_cnt.dislike_count, 0) AS dislike_count
+        """
+
+        if user_id is not None:
+            select_parts += """,
+                (like_exists.user_id IS NOT NULL) AS is_liked,
+                (dislike_exists.user_id IS NOT NULL) AS is_disliked
+            """
+
+        sql = text(f"""
+            SELECT {select_parts}
+            FROM comments c
+            JOIN users u ON c.user_id = u.id
+            
+            LEFT JOIN (
+                SELECT parent_id, COUNT(*) AS replies_count
+                FROM comments
+                WHERE parent_id IS NOT NULL
+                GROUP BY parent_id
+            ) replies_cnt ON replies_cnt.parent_id = c.id
+            
+            LEFT JOIN (
+                SELECT comment_id, COUNT(*) AS like_count
+                FROM reactions
+                WHERE type = :like_type AND comment_id IS NOT NULL
+                GROUP BY comment_id
+            ) like_cnt ON like_cnt.comment_id = c.id
+            
+            LEFT JOIN (
+                SELECT comment_id, COUNT(*) AS dislike_count
+                FROM reactions
+                WHERE type = :dislike_type AND comment_id IS NOT NULL
+                GROUP BY comment_id
+            ) dislike_cnt ON dislike_cnt.comment_id = c.id
+            
+            {"""
+            LEFT JOIN reactions like_exists
+                ON like_exists.comment_id = c.id
+                AND like_exists.type = :like_type
+                AND like_exists.user_id = :user_id
+            
+            LEFT JOIN reactions dislike_exists
+                ON dislike_exists.comment_id = c.id
+                AND dislike_exists.type = :dislike_type
+                AND dislike_exists.user_id = :user_id
+            """ if user_id is not None else ""}
+            
+            WHERE c.video_id = :video_id
+              AND c.parent_id IS NULL
+            ORDER BY c.id ASC
+        """)
+
+        params = {
+            "video_id": video_id,
+            "like_type": ReactionType.LIKE.name,
+            "dislike_type": ReactionType.DISLIKE.name,
+        }
+        if user_id is not None:
+            params["user_id"] = user_id
+
         async with async_session() as session:
-            replies_alias = aliased(Comment)
+            result = await session.execute(sql, params)
+            rows = result.fetchall()
 
-            replies_subquery = (
-                select(func.count(replies_alias.id))
-                .where(replies_alias.parent_id == Comment.id)
-                .scalar_subquery()
-                .label("replies_count")
-            )
+            comments = []
+            for row in rows:
+                comment_data = {
+                    "id": row.comment_id,
+                    "video_id": row.video_id,
+                    "parent_id": row.parent_id,
+                    "content": row.content,
+                    "is_edited": row.is_edited,
+                    "created_at": row.comment_created_at,
+                    "updated_at": row.comment_updated_at,
+                    "replies_count": row.replies_count,
+                    "like_count": row.like_count,
+                    "dislike_count": row.dislike_count,
+                    "is_liked": row.is_liked if user_id is not None else False,
+                    "is_disliked": row.is_disliked if user_id is not None else False,
+                    "user": {
+                        "id": row.user_id,
+                        "email": row.user_email,
+                        "username": row.user_username,
+                        "avatar_url": row.user_avatar_url,
+                        "role": row.user_role,
+                        "created_at": row.user_created_at,
+                        "updated_at": row.user_updated_at,
+                    }
+                }
+                comments.append(CommetExtendedSchemaRead.model_validate(comment_data))
 
-            like_count = (
-                select(func.count(Reaction.id))
-                .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.LIKE))
-                .scalar_subquery()
-                .label("like_count")
-            )
+            return comments
 
-            dislike_count = (
-                select(func.count(Reaction.id))
-                .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.DISLIKE))
-                .scalar_subquery()
-                .label("like_count")
-            )
+    async def get_all_for_comment(self, comment_id: int, user_id: int | None = None):
+        select_parts = """
+            c.id AS comment_id,
+            c.video_id,
+            c.parent_id,
+            c.content,
+            c.is_edited,
+            c.created_at AS comment_created_at,
+            c.updated_at AS comment_updated_at,
+            
+            u.id AS user_id,
+            u.email AS user_email,
+            u.username AS user_username,
+            u.avatar_url AS user_avatar_url,
+            u.role AS user_role,
+            u.created_at AS user_created_at,
+            u.updated_at AS user_updated_at,
+            
+            COALESCE(like_cnt.like_count, 0) AS like_count,
+            COALESCE(dislike_cnt.dislike_count, 0) AS dislike_count
+        """
 
-            query = (
-                select(Comment, replies_subquery)
-                .join(Comment.user)
-                .options(
-                    joinedload(Comment.user)
-                )
-                .add_columns(like_count, dislike_count)
-                .where(Comment.video_id==video_id)
-                .order_by(Comment.id)
-            )
+        if user_id is not None:
+            select_parts += """,
+                (like_exists.user_id IS NOT NULL) AS is_liked,
+                (dislike_exists.user_id IS NOT NULL) AS is_disliked
+            """
 
-            if user_id is not None:
-                like_exists = (
-                    exists()
-                    .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.LIKE))
-                    .where(Reaction.user_id == user_id)
-                    .correlate(Comment)
-                )
+        sql = text(f"""
+            SELECT {select_parts}
+            FROM comments c
+            JOIN users u ON c.user_id = u.id
+            
+            LEFT JOIN (
+                SELECT comment_id, COUNT(*) AS like_count
+                FROM reactions
+                WHERE type = :like_type AND comment_id IS NOT NULL
+                GROUP BY comment_id
+            ) like_cnt ON like_cnt.comment_id = c.id
+            
+            LEFT JOIN (
+                SELECT comment_id, COUNT(*) AS dislike_count
+                FROM reactions
+                WHERE type = :dislike_type AND comment_id IS NOT NULL
+                GROUP BY comment_id
+            ) dislike_cnt ON dislike_cnt.comment_id = c.id
+            
+            {"""
+            LEFT JOIN reactions like_exists
+                ON like_exists.comment_id = c.id
+                AND like_exists.type = :like_type
+                AND like_exists.user_id = :user_id
+            
+            LEFT JOIN reactions dislike_exists
+                ON dislike_exists.comment_id = c.id
+                AND dislike_exists.type = :dislike_type
+                AND dislike_exists.user_id = :user_id
+            """ if user_id is not None else ""}
+            
+            WHERE c.parent_id = :comment_id
+            ORDER BY c.id ASC
+        """)
 
-                dislike_exists = (
-                    exists()
-                    .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.DISLIKE))
-                    .where(Reaction.user_id == user_id)
-                    .correlate(Comment)
-                )
+        params = {
+            "comment_id": comment_id,
+            "like_type": ReactionType.LIKE.name,
+            "dislike_type": ReactionType.DISLIKE.name,
+        }
+        if user_id is not None:
+            params["user_id"] = user_id
 
-                query = query.add_columns( 
-                    like_exists.label("is_liked"),
-                    dislike_exists.label("is_disliked")
-                )
-
-            res = await session.execute(query)
-            rows = []
-            for row in res.all():
-                comment_schema = CommetExtendedSchemaRead.model_validate(row[0])
-                comment_schema.replies_count = row[1]
-                comment_schema.like_count = row[2]
-                comment_schema.dislike_count = row[3]
-                comment_schema.is_liked = row[4] if user_id else False
-                comment_schema.is_disliked = row[5] if user_id else False
-                rows.append(comment_schema)
-            return rows
-
-    async def get_all_for_comment(self, comment_id: int, user_id=None):
         async with async_session() as session:
-            like_count = (
-                select(func.count(Reaction.id))
-                .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.LIKE))
-                .scalar_subquery()
-                .label("like_count")
-            )
+            result = await session.execute(sql, params)
+            rows = result.fetchall()
 
-            dislike_count = (
-                select(func.count(Reaction.id))
-                .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.DISLIKE))
-                .scalar_subquery()
-                .label("like_count")
-            )
+            comments = []
+            for row in rows:
+                comment_data = {
+                    "id": row.comment_id,
+                    "video_id": row.video_id,
+                    "parent_id": row.parent_id,
+                    "content": row.content,
+                    "is_edited": row.is_edited,
+                    "created_at": row.comment_created_at,
+                    "updated_at": row.comment_updated_at,
+                    "replies_count": 0,
+                    "like_count": row.like_count,
+                    "dislike_count": row.dislike_count,
+                    "is_liked": row.is_liked if user_id is not None else False,
+                    "is_disliked": row.is_disliked if user_id is not None else False,
+                    "user": {
+                        "id": row.user_id,
+                        "email": row.user_email,
+                        "username": row.user_username,
+                        "avatar_url": row.user_avatar_url,
+                        "role": row.user_role,
+                        "created_at": row.user_created_at,
+                        "updated_at": row.user_updated_at,
+                    }
+                }
+                comments.append(CommetExtendedSchemaRead.model_validate(comment_data))
 
-            query = (
-                select(Comment)
-                .join(Comment.user)
-                .options(
-                    joinedload(Comment.user)
-                )
-                .add_columns(like_count, dislike_count)
-                .where(Comment.parent_id==comment_id)
-                .order_by(Comment.id)
-            )
-
-            if user_id is not None:
-                like_exists = (
-                    exists()
-                    .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.LIKE))
-                    .where(Reaction.user_id == user_id)
-                    .correlate(Comment)
-                )
-
-                dislike_exists = (
-                    exists()
-                    .where((Reaction.comment_id == Comment.id) & (Reaction.type==ReactionType.DISLIKE))
-                    .where(Reaction.user_id == user_id)
-                    .correlate(Comment)
-                )
-
-                query = query.add_columns( 
-                    like_exists.label("is_liked"),
-                    dislike_exists.label("is_disliked")
-                )
-
-            res = await session.execute(query)
-            rows = []
-            for row in res.all():
-                comment_schema = CommetExtendedSchemaRead.model_validate(row[0])
-                comment_schema.like_count = row[1]
-                comment_schema.dislike_count = row[2]
-                comment_schema.is_liked = row[3] if user_id else False
-                comment_schema.is_disliked = row[4] if user_id else False
-                rows.append(comment_schema)
-            return rows
+            return comments

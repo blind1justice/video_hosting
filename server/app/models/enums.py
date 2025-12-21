@@ -2,28 +2,28 @@ import enum
 
 
 class Role(enum.Enum):
-    USER = 'user'
-    MODERATOR = 'moderator'
-    ADMIN = 'admin'
+    USER = 'USER'
+    MODERATOR = 'MODERATOR'
+    ADMIN = 'ADMIN'
 
 
 class VideoStatus(enum.Enum):
-    PROCESSING = 'processing'
-    PROCESSED = 'processed'
-    FAILED = 'failed'
+    PROCESSING = 'PROCESSING'
+    PROCESSED = 'PROCESSED'
+    FAILED = 'FAILED'
 
 
 class ReactionType(enum.Enum):
-    LIKE = 'like'
-    DISLIKE = 'dislike'
+    LIKE = 'LIKE'
+    DISLIKE = 'DISLIKE'
 
 
 class ReportStatus(enum.Enum):
-    PENDING = 'pending'
-    RESOLVED = 'resolved'
-    REJECTED = 'rejected'
+    PENDING = 'PENDING'
+    RESOLVED = 'RESOLVED'
+    REJECTED = 'REJECTED'
 
 
 class AvailableLanguages(enum.Enum):
-    RUSSIAN = 'russian'
-    ENGLISH = 'english'
+    RUSSIAN = 'RUSSIAN'
+    ENGLISH = 'ENGLISH'

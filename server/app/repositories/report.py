@@ -1,6 +1,5 @@
 from repositories.base import BaseRepository
 from models import Report, Video, User, Channel
-from models.enums import ReportStatus, VideoStatus
 from schemas.report import ReportExtendedSchemaRead
 from db.session import async_session
 from sqlalchemy import text
@@ -37,7 +36,7 @@ class ReportRepository(BaseRepository):
                 extended_data = {
                     "id": row.id,
                     "reason": row.reason,
-                    "status": ReportStatus[row.status],
+                    "status": row.status,
                     "created_at": row.created_at,
                     "updated_at": row.updated_at,
                     "reporter": {
@@ -48,7 +47,7 @@ class ReportRepository(BaseRepository):
                     "video": {
                         "id": row.v_id,
                         "title": row.title,
-                        "status": VideoStatus[row.v_status],
+                        "status": row.v_status,
                         "description": row.v_desc,
                         "duration": row.duration,
                         "original_format": row.original_format,

@@ -66,7 +66,7 @@ class UserSchemaAdd(BaseModel):
     username: Optional[str] = None
     hashed_password: str
     avatar_url: Optional[str] = None
-    role: Role = Role.USER
+    role: Role = Role.USER.name
 
 
 class RegisterSchema(BaseModel):

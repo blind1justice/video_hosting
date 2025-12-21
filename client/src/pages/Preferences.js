@@ -35,7 +35,7 @@ const Preferences = observer(() => {
       setError("Не удалось загрузить настройки. Используются настройки по умолчанию.");
       setUserPreferences({
         autoplay: false,
-        language: "russian",
+        language: "RUSSIAN",
         notifications_enabled: true
       });
     } finally {
@@ -195,16 +195,16 @@ const Preferences = observer(() => {
                 >
                   <ToggleButton
                     id="lang-ru"
-                    value="russian"
-                    variant={userPreferences.language === "russian" ? "primary" : "outline-primary"}
+                    value="RUSSIAN"
+                    variant={userPreferences.language === "RUSSIAN" ? "primary" : "outline-primary"}
                     className="flex-fill py-2"
                   >
                     Русский
                   </ToggleButton>
                   <ToggleButton
                     id="lang-en"
-                    value="english"
-                    variant={userPreferences.language === "english" ? "primary" : "outline-primary"}
+                    value="ENGLISH"
+                    variant={userPreferences.language === "ENGLISH" ? "primary" : "outline-primary"}
                     className="flex-fill py-2"
                   >
                     English
