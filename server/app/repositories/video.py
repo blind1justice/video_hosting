@@ -130,15 +130,18 @@ class VideoRepository(BaseRepository):
             ) dislike_cnt ON dislike_cnt.video_id = v.id
             
             LEFT JOIN (
+                WITH all_comments AS (
+                    SELECT id FROM comments WHERE video_id = :video_id
+                    UNION
+                    SELECT c.id 
+                    FROM comments c
+                    JOIN comments p ON c.parent_id = p.id
+                    WHERE p.video_id = :video_id
+                )
                 SELECT 
-                    c.video_id,
+                    :video_id AS video_id,
                     COUNT(*) AS comment_count
-                FROM comments c
-                WHERE c.video_id = :video_id
-                   OR c.parent_id IN (
-                       SELECT id FROM comments WHERE video_id = :video_id
-                   )
-                GROUP BY c.video_id
+                FROM all_comments
             ) comment_cnt ON comment_cnt.video_id = v.id
             
             {"""

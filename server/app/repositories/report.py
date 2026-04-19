@@ -3,7 +3,6 @@ from models import Report, Video, User, Channel
 from schemas.report import ReportExtendedSchemaRead
 from db.session import async_session
 from sqlalchemy import text
-from sqlalchemy.orm import joinedload, aliased
 
 
 class ReportRepository(BaseRepository):

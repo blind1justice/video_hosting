@@ -16,7 +16,7 @@ class Video(Base):
     duration: Mapped[int] = mapped_column(server_default=text('0'))
     original_format: Mapped[str] = mapped_column(String(30))
     storage_key: Mapped[str] = mapped_column(String(500))
-    thumbnail_key: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    thumbnail_key: Mapped[str | None] = mapped_column(String(500))
 
     channel = relationship('Channel', back_populates='videos')
     reactions = relationship('Reaction', back_populates='video')
