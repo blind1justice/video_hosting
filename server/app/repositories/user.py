@@ -37,7 +37,23 @@ class UserRepository(BaseRepository):
                 instance = self.model(**dict(row._mapping))
                 return instance.to_read_model()
             return None
-            
+        
+    async def get_by_confirmation_code(self, email: str, code: str):
+        sql = text(f"""
+            SELECT * FROM {self.model.__tablename__}
+            WHERE email = :email
+            AND email_confirmation_code = :email_confirmation_code
+        """
+        )
+
+        async with async_session() as session:
+            result = await session.execute(sql, {"email": email, "email_confirmation_code": code})
+            row = result.fetchone()
+            if row:
+                instance = self.model(**dict(row._mapping))
+                return instance.to_read_model()
+            return None
+
     async def get_user_with_channel(self, user_id: int, warden_id: int | None = None):
         select_parts = """
             u.id AS user_id,

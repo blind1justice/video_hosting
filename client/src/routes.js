@@ -42,6 +42,10 @@ export const publicRoutes = [
         Component: Auth
     },
     {
+        path: '/confirm',
+        Component: Auth
+    },
+    {
         path: '/videos/:id',
         Component: VideoDetail
     },

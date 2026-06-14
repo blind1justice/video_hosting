@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 from typing import Optional, BinaryIO
-from moviepy.editor import VideoFileClip
+from moviepy import VideoFileClip
 from PIL import Image
 
 

@@ -13,6 +13,9 @@ class UserSchemaWithouChannelRead(BaseModel):
     role: Role
     created_at: datetime
     updated_at: datetime
+    email_confirmation_code: Optional[str] = None
+    email_confirmation_sent_at: Optional[datetime] = None
+    is_confirmed: bool
 
     class Config:
         from_attributes = True
@@ -67,12 +70,19 @@ class UserSchemaAdd(BaseModel):
     hashed_password: str
     avatar_url: Optional[str] = None
     role: Role = Role.USER.name
+    email_confirmation_code: str
+    email_confirmation_sent_at: datetime
 
 
 class RegisterSchema(BaseModel):
     email: EmailStr
     username: Optional[str] = Field(None, min_length=5, max_length=50)
     password: str = Field(min_length=8, max_length=50)
+
+
+class VerifySchema(BaseModel):
+    email: EmailStr
+    confirmation_code: str
 
 
 class LoginSchema(BaseModel):

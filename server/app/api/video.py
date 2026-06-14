@@ -25,7 +25,7 @@ async def upload_video(
             detail=f'Unsupported video format. Get {video_file.content_type}. Allowed: {", ".join(allowed_video_types)}'
         )
 
-    return await video_service.upload_one(current_user.channel.id, title, video_file.file, video_file.content_type, description)
+    return await video_service.upload_one(current_user.channel.id, current_user.id, title, video_file.file, video_file.content_type, description)
 
 
 @router.delete('/{video_id}')

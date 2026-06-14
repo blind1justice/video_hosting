@@ -1,7 +1,8 @@
 from models.base import Base
 from models.enums import Role
+from datetime import datetime
 
-from sqlalchemy import String, Enum
+from sqlalchemy import Boolean, DateTime, String, Enum, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -14,6 +15,9 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(length=100))
     avatar_url: Mapped[str | None] = mapped_column(String(length=255), nullable=True)
     role: Mapped[Role] = mapped_column(Enum(Role), server_default=Role.USER.name)
+    email_confirmation_code: Mapped[str | None] = mapped_column(nullable=True)
+    email_confirmation_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_confirmed: Mapped[bool] = mapped_column(Boolean, server_default=text('false'))
 
     channel = relationship('Channel', uselist=False, back_populates='user')
     user_preferences = relationship('UserPreferences', uselist=False, back_populates='user')

@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: interaction_service_db
+    environment:
+      POSTGRES_DB: interaction_service_db
+      POSTGRES_USER: interaction_service_db
+      POSTGRES_PASSWORD: interaction_service_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+
+volumes:
+  postgres_data:

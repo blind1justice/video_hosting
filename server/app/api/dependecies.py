@@ -5,6 +5,8 @@ from services.reaction_service import ReactionService
 from services.video_processor_service import VideoProcessorService
 from services.s3_service import S3Service
 from services.auth_service import AuthService
+from services.email_service import EmailService
+from services.rabbit_mq_service import RabbitMQClient
 from services.user_service import UserService
 from services.user_preferences_service import UserPreferencesService
 from services.video_service import VideoService
@@ -22,7 +24,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/auth/login-form')
 def report_service():
     s3_service = S3Service()
     video_processor_service = VideoProcessorService()
-    video_service = VideoService(s3_service, video_processor_service)
+    rabbit_client = RabbitMQClient()
+    video_service = VideoService(s3_service, video_processor_service, rabbit_client)
     return ReportService(s3_service, video_service)
 
 
@@ -49,7 +52,8 @@ def user_preferences_service():
 def auth_service():
     user_service = UserService()
     user_preferences_service = UserPreferencesService()
-    return AuthService(user_service, user_preferences_service)
+    email_service = EmailService()
+    return AuthService(user_service, user_preferences_service, email_service)
 
 
 def channel_service():
@@ -59,7 +63,8 @@ def channel_service():
 def video_service():
     s3_service = S3Service()
     video_processor_service = VideoProcessorService()
-    return VideoService(s3_service, video_processor_service)
+    rabbit_client = RabbitMQClient()
+    return VideoService(s3_service, video_processor_service, rabbit_client)
 
 
 async def get_current_user(

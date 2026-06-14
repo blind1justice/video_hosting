@@ -1,19 +1,29 @@
 import uuid
+import json
+import aio_pika
 from fastapi import HTTPException, status
 from models.enums import VideoStatus
 from services.s3_service import S3Service
 from services.video_processor_service import VideoProcessorService
 from repositories.video import VideoRepository
 from services.base import BaseService
+from services.rabbit_mq_service import RabbitMQClient 
 from schemas.video import VideoUploadSchema
+from config.settings import settings
 
 
 class VideoService(BaseService):
     repo: VideoRepository = VideoRepository()
     
-    def __init__(self, s3_service: S3Service, video_processor_service: VideoProcessorService):
+    def __init__(
+            self, 
+            s3_service: S3Service, 
+            video_processor_service: VideoProcessorService,
+            rabbit_mq_service: RabbitMQClient
+        ):
         self.s3_service = s3_service
         self.video_processor_service = video_processor_service
+        self.rabbit_client = rabbit_mq_service
 
     async def delete_from_channel(self, channel_id, video_id, is_moderator=False):
         video = await self.repo.get_one(video_id)
@@ -30,7 +40,7 @@ class VideoService(BaseService):
         res = await self.repo.delete_one(video_id)
         return res
 
-    async def upload_one(self, channel_id, title, video, original_format, description=None):
+    async def upload_one(self, channel_id, user_id, title, video, original_format, description=None):
         storage_key = f'videos/{uuid.uuid4()}_{title}'
         thumbnail_key = f'thumbnails/{uuid.uuid4()}_{title}.jpg'
         video_data = VideoUploadSchema(
@@ -55,6 +65,21 @@ class VideoService(BaseService):
             "duration": duration,
             "status": VideoStatus.PROCESSED
         })
+
+        message_body = json.dumps(
+            {
+                "user_id": user_id,
+                "content": f"Ваше видео было успешно загружено: {settings.frontend_url}/videos/{new_video.id}"
+            }).encode()
+        
+        message = aio_pika.Message(
+            message_body,
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+        )
+        
+        await self.rabbit_client.connect()
+        exchange = await self.rabbit_client.channel.get_exchange("tasks_exchange")
+        await exchange.publish(message, routing_key="task.key")
 
         return new_video
 

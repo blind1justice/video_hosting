@@ -3,26 +3,21 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    db_user: str = 'video_hosting_db'
-    db_password: str = 'video_hosting_db'
-    db_name: str = 'video_hosting_db'
+    db_user: str = 'interaction_service_db'
+    db_password: str = 'interaction_service_db'
+    db_name: str = 'interaction_service_db'
     db_host: str = 'localhost'
-    db_port: int = 5434
+    db_port: int = 5435
 
     jwt_secret_key: str
     jwt_algorithm: str = 'HS256'
     jwt_access_token_expire_minutes: int = 60 * 3
 
-    minio_endpoint: str = 'http://localhost:9000'
-    minio_access_key: str = 'minioadmin'
-    minio_secret_key: str = 'minioadmin'
-    minio_bucket_name: str = 'video-hosting'
-
-    SMTP_HOST: str = "localhost"
-    SMTP_PORT: int = 1025
-    SMTP_USE_TLS: bool = False
-    SMTP_USERNAME: str = ""
-    SMTP_PASSWORD: str = ""
+    origins: List[str] = [
+        'http://localhost:3000',
+        'http://localhost:8000',
+        'http://localhost:80',
+    ]
 
     rabbitmq_host: str = "localhost"
     rabbitmq_port: int = 5672
@@ -31,15 +26,6 @@ class Settings(BaseSettings):
     rabbitmq_vhost: str = "/"
 
     internal_api_key: str
-
-    frontend_url: str = 'http://localhost:3000'
-    this_url: str = 'http://localhost:8000'
-    interaction_service_url: str = 'http://localhost:8001'
-
-    origins: List[str] = [
-        'http://localhost:3000',
-        'http://localhost:80',
-    ]
 
     @property
     def database_url(self) -> str:
@@ -56,6 +42,7 @@ class Settings(BaseSettings):
             f"{self.rabbitmq_password}@{self.rabbitmq_host}:"
             f"{self.rabbitmq_port}/{self.rabbitmq_vhost}"
         )
+    
     class Config:
         env_file = ".env" 
     

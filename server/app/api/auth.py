@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, Form
 
-from schemas.user import RegisterSchema, LoginSchema, UserSchemaRead
+from schemas.user import RegisterSchema, LoginSchema, UserSchemaRead, VerifySchema
 from services.auth_service import AuthService
 from api.dependecies import auth_service, get_current_user
 
@@ -13,7 +13,18 @@ async def register(
     user: RegisterSchema, 
     auth_service: Annotated[AuthService, Depends(auth_service)]
 ):
-    user, token = await auth_service.register(user)
+    await auth_service.register(user)
+    return {
+        'email': user.email
+    }
+
+
+@router.post('/verify')
+async def verify(
+    user: VerifySchema,
+    auth_service: Annotated[AuthService, Depends(auth_service)]
+):
+    user, token = await auth_service.confirm_account(user)
     return {
         'user': user,
         'token': token
